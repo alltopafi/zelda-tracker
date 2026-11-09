@@ -17,6 +17,8 @@ spec:
         app: zelda-tracker
     spec:
       terminationGracePeriodSeconds: 30
+      nodeSelector:
+        kubernetes.io/arch: amd64   # the image is built for amd64 only
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -25,7 +27,7 @@ spec:
       containers:
         - name: tracker
           image: zelda-tracker   # name and tag are set in kustomization.yaml
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always   # the tag is "latest", so re-pull on every pod start
           args: ["run"]
           env:
             - name: TZ

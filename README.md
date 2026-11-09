@@ -14,25 +14,29 @@ Everything about what is tracked lives in `deploy/config.toml`.
 
 ## Deploy to k3s
 
-**1. Build the image** (amd64 or arm64; about 2 GB because it carries Chromium):
-
-```sh
-docker build -t zelda-tracker:0.1.0 .
-```
+**1. The image is built for you.** Every push to `main` runs
+`.github/workflows/docker-publish.yml`, which runs the tests, builds the image
+for amd64, and pushes it to `ghcr.io/alltopafi/zelda-tracker` tagged `latest`,
+`main` and `sha-<commit>`. It is about 2 GB because it carries Chromium.
 
 The base image tag and the Playwright pip package are pinned together through
-`PLAYWRIGHT_VERSION` (default 1.63.0). If that tag fails to pull, build with
-`--build-arg PLAYWRIGHT_VERSION=1.58.0`.
+`PLAYWRIGHT_VERSION` in the Dockerfile (default 1.63.0). If the build fails to
+pull that tag, change the default to 1.58.0.
 
-**2. Get the image to the cluster.** Either push it to a registry your nodes
-can pull from and set `newName`/`newTag` in `deploy/kustomization.yaml`, or
-import it directly on the node that will run the pod:
+**2. Let the cluster pull it.** The Deployment is pinned to amd64 nodes. If
+the GitHub package is private (the default for a private repo), either make it
+public under the package's settings on GitHub, or create a pull secret and add
+`imagePullSecrets: [{name: ghcr}]` to the pod spec in `deploy/deployment.yaml`:
 
 ```sh
-docker save zelda-tracker:0.1.0 | sudo k3s ctr images import -
+kubectl create namespace zelda-tracker
+kubectl -n zelda-tracker create secret docker-registry ghcr \
+  --docker-server=ghcr.io --docker-username=alltopafi \
+  --docker-password='<a GitHub token with read:packages>'
 ```
 
-**3. Create the secret** (Discord: channel settings > Integrations > Webhooks):
+**3. Create the webhook secret** (Discord: channel settings > Integrations > Webhooks).
+Skip the first line if you already created the namespace in step 2.
 
 ```sh
 kubectl create namespace zelda-tracker
@@ -65,6 +69,7 @@ kubectl -n zelda-tracker exec deploy/zelda-tracker -- python3 -m tracker test-no
 | Look at the browser | `port-forward deploy/zelda-tracker 6080:6080`, then open http://localhost:6080/vnc.html |
 | Stop tabs reloading while you use the browser | `exec deploy/zelda-tracker -- python3 -m tracker pause` (then `resume`) |
 | Change products, intervals, selectors | edit `deploy/config.toml`, then `apply -k deploy/` (the pod restarts itself) |
+| Pick up a newly built image | `rollout restart deploy/zelda-tracker` |
 
 There is deliberately no Service or Ingress: the browser view is only
 reachable through `port-forward`.
@@ -107,7 +112,8 @@ client, and a real headed Chromium against a local test server. Not tested:
   logs `unknown`, adjust its selectors as described above.
 - Whether Nintendo and HORI accept plain HTTP requests from your cluster. If
   either logs `blocked`, switch it to `fetch = "browser"`.
-- The Docker build and the Kubernetes manifests (syntax-checked only).
+- The Docker build, the GitHub Actions workflow and the Kubernetes manifests
+  (syntax-checked only).
 
 ## Run locally
 

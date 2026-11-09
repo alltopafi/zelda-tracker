@@ -14,8 +14,9 @@ configMapGenerator:
     files:
       - config.toml
 
-# Point this at wherever you pushed or imported the image.
+# Built and pushed by .github/workflows/docker-publish.yml on every push to main.
+# To pin a build, replace "latest" with a commit tag such as "sha-c744162".
 images:
   - name: zelda-tracker
-    newName: zelda-tracker
-    newTag: "0.1.0"
+    newName: ghcr.io/alltopafi/zelda-tracker
+    newTag: latest
