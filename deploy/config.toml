@@ -1,0 +1,79 @@
+# Restock tracker configuration. Mounted at /config/config.toml in the pod.
+# The Discord webhook URL is NOT set here: it comes from the DISCORD_WEBHOOK_URL
+# environment variable (a Kubernetes Secret).
+
+[settings]
+# Who to ping on a restock: "@everyone", "@here", a role "<@&ROLE_ID>",
+# a user "<@USER_ID>", or "" for no ping. Status messages never ping.
+mention = "@everyone"
+heartbeat_hours = 24        # "still watching" summary; 0 turns it off
+unknown_alert_after = 5     # warn after this many unreadable checks in a row
+realert_minutes = 10        # don't re-ping for the same listing within this window
+block_notify_minutes = 60   # at most one "blocked" warning per retailer per hour
+max_backoff_seconds = 1800  # longest pause after repeated blocks
+
+# ---- Retailers --------------------------------------------------------------
+# fetch = "http"    plain request, reads the page's structured data
+# fetch = "browser" real Chromium tab in the pod, reads the rendered page
+# Intervals are seconds; each check waits a random time between min and max.
+# If an http retailer starts reporting "blocked", switch it to "browser".
+
+[retailers.nintendo]
+fetch = "http"
+min_interval = 30
+max_interval = 60
+
+[retailers.hori]
+fetch = "http"
+min_interval = 45
+max_interval = 90
+
+[retailers.bestbuy]
+fetch = "browser"
+min_interval = 60
+max_interval = 120
+# Override the built-in button selectors without rebuilding the image:
+# buy_selectors = ["button[data-button-state]"]
+# out_selectors = []
+
+[retailers.target]
+fetch = "browser"
+min_interval = 60
+max_interval = 120
+
+[retailers.walmart]
+fetch = "browser"
+min_interval = 60
+max_interval = 120
+
+# ---- Products ---------------------------------------------------------------
+# max_price: an "in stock" listing above this is treated as a reseller and ignored.
+
+[[products]]
+id = "pro-controller"
+name = "Switch 2 Pro Controller - Zelda 40th Anniversary"
+max_price = 110.00          # list price $99.99
+
+[products.urls]
+bestbuy = "https://www.bestbuy.com/site/6691849.p?skuId=6691849"
+target = "https://www.target.com/p/nintendo-switch-2-pro-controller-the-legend-of-zelda-40th-anniversary-edition/-/A-1013213521"
+# selectedSellerId=0 asks Walmart for its own listing, not a marketplace seller.
+walmart = "https://www.walmart.com/ip/Nintendo-Switch-2-Pro-Controller-The-Legend-of-Zelda-40th-Anniversary-Edition/20954470204?selectedSellerId=0"
+# nintendo = ""   # add the plain controller's Nintendo Store URL here if you want it
+
+[[products]]
+id = "pro-controller-stand"
+name = "Switch 2 Pro Controller + Display Stand - Zelda 40th (Nintendo exclusive)"
+max_price = 120.00          # list price $109.99
+
+[products.urls]
+nintendo = "https://www.nintendo.com/us/store/products/nintendo-switch-2-pro-controller-display-stand-the-legend-of-zelda-40th-anniversary-edition-127076/"
+
+[[products]]
+id = "electric-ocarina"
+name = "HORI Electric Ocarina of Time"
+max_price = 60.00           # list price $49.99
+
+[products.urls]
+nintendo = "https://www.nintendo.com/us/store/products/electric-ocarina-of-time-129987/"
+hori = "https://stores.horiusa.com/nsx-261/"

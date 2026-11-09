@@ -1,0 +1,12 @@
+[project]
+name = "restock-tracker"
+version = "0.1.0"
+description = "Polls retailer product pages and alerts a Discord webhook on restock"
+requires-python = ">=3.11"
+dependencies = ["playwright>=1.58"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

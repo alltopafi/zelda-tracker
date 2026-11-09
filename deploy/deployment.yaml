@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zelda-tracker
+  labels:
+    app: zelda-tracker
+spec:
+  replicas: 1          # exactly one: the browser profile cannot be shared
+  strategy:
+    type: Recreate     # stop the old pod before starting the new one
+  selector:
+    matchLabels:
+      app: zelda-tracker
+  template:
+    metadata:
+      labels:
+        app: zelda-tracker
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: tracker
+          image: zelda-tracker   # name and tag are set in kustomization.yaml
+          imagePullPolicy: IfNotPresent
+          args: ["run"]
+          env:
+            - name: TZ
+              value: America/Chicago
+          envFrom:
+            - secretRef:
+                name: zelda-tracker   # DISCORD_WEBHOOK_URL, optional VNC_PASSWORD
+          ports:
+            - name: novnc
+              containerPort: 6080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              memory: 2Gi
+          livenessProbe:
+            exec:
+              command: ["python3", "-m", "tracker", "healthcheck"]
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: zelda-tracker-data
+        - name: config
+          configMap:
+            name: zelda-tracker-config
+        - name: dshm               # Chromium needs more shared memory than the 64Mi default
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi

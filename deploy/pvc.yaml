@@ -1,0 +1,12 @@
+# Holds the browser profile, last-known stock state, and debug page copies.
+# k3s's default "local-path" storage class pins this to one node, which is
+# fine for a single-replica deployment.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zelda-tracker-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi

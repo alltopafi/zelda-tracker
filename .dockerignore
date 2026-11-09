@@ -1,0 +1,7 @@
+*
+!tracker
+!tracker/**
+!docker
+!docker/**
+**/__pycache__
+**/*.pyc

@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: zelda-tracker
+
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - deployment.yaml
+
+# config.toml becomes a ConfigMap with a content hash in its name, so editing
+# the file and re-applying rolls the pod automatically.
+configMapGenerator:
+  - name: zelda-tracker-config
+    files:
+      - config.toml
+
+# Point this at wherever you pushed or imported the image.
+images:
+  - name: zelda-tracker
+    newName: zelda-tracker
+    newTag: "0.1.0"
